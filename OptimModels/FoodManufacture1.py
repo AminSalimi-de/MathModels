@@ -3,24 +3,48 @@ import numpy as np
 
 h = highspy.Highs()
 
-x0 = h.addVariable(lb = 0, ub = 4)
-x1 = h.addVariable(lb = 1, ub = 7)
+nOils = 5
+nMonths = 6
 
-h.addConstr(5 <=   x0 + 2*x1 <= 15)
-h.addConstr(6 <= 3*x0 + 2*x1)
+JuneStorage = 500 #[ton]
+StorageUB = 1000 #[ton]
 
-h.minimize(x0 + x1)
+# [i][j] where i=Oil Type, j=Month index
+def Create2DArray(n1, n2):
+    return [[None for x in range(n2)] for y in range(n1)]
+def Create1DArray(size):
+    return [None for y in range(nMonths)]
 
-h.run()
 
-solution = h.getSolution()
-basis = h.getBasis()
-info = h.getInfo()
-model_status = h.getModelStatus()
-print('Model status = ', h.modelStatusToString(model_status))
-print()
-print('Optimal objective = ', info.objective_function_value)
-print('Iteration count = ', info.simplex_iteration_count)
-print('Primal solution status = ', h.solutionStatusToString(info.primal_solution_status))
-print('Dual solution status = ', h.solutionStatusToString(info.dual_solution_status))
-print('Basis validity = ', h.basisValidityToString(info.basis_validity))
+#       Decision Variables
+BV = Create2DArray(nOils, nMonths) # Buy Oils Variables 
+UV = Create2DArray(nOils, nMonths) # Use Oils Variables
+SV = Create2DArray(nOils, nMonths) # Storage Oils Variables
+PV = Create1DArray(nMonths) # Product Variables
+
+for i in range(nOils):
+    for j in range(nMonths):
+        BV[i][j] = h.addVariable()
+
+for i in range(nOils):
+    for j in range(nMonths):
+        UV[i][j] = h.addVariable()
+
+for i in range(nOils):
+    for j in range(nMonths):
+        if j != nMonths-1:
+            SV[i][j] = h.addVariable(ub=StorageUB)
+        else:
+            SV[i][j] = JuneStorage
+
+for i in range(nMonths):
+    PV[i] = h.addVariable()
+
+
+#       Objective
+ProductPrice = 150 # 150 [pond/ton]
+Income = 0
+for monthlyProd in PV:    
+    Income = ProductPrice*monthlyProd
+
+print("end")
