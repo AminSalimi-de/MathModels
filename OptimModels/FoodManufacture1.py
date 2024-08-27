@@ -6,6 +6,7 @@ h = highspy.Highs()
 nOils = 5
 nMonths = 6
 
+InitialStorage = 500 #[ton] 
 JuneStorage = 500 #[ton]
 StorageUB = 1000 #[ton]
 MonthlyStorageCost = 5 #[pond/(ton.month)]
@@ -47,12 +48,28 @@ for i in range(nOils):
         else:
             SV[i][j] = JuneStorage
 
-for i in range(nMonths):
-    PV[i] = h.addVariable()
+for j in range(nMonths):
+    PV[j] = h.addVariable()
 
 #       Constraints
+# Inventory
+InventoryEqs = Create2DArray(nOils, nMonths)
+for i in range(nOils):
+    for j in range(nMonths):
+        dS = SV[i][j]
+        if j==0:
+            dS -= InitialStorage
+        else:
+            dS -= SV[i][j-1]
+        InventoryEqs[i][j] = h.addConstr(BV[i][j] - UV[i][j] == dS)
 
-
+# Mass Balance:
+MassBalamceEqs = Create1DArray(nMonths)
+for j in range(nMonths):
+    UsedOil = 0
+    for i in range(nOils):
+        UsedOil += UV[i][j]
+    MassBalamceEqs[j] = h.addConstr(UsedOil == PV[j])
 
 
 #       Objective
