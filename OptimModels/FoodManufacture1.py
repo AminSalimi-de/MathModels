@@ -1,5 +1,6 @@
 import highspy
 import numpy as np
+from enum import IntEnum
 
 h = highspy.Highs()
 
@@ -11,6 +12,16 @@ JuneStorage = 500 #[ton]
 StorageUB = 1000 #[ton]
 MonthlyStorageCost = 5 #[pond/(ton.month)]
 ProductPrice = 150 # 150 [pond/ton]
+VegetableOilMonthlyRefiningLimit = 200
+NonVegetableOilMonthlyRefiningLimit = 250
+
+class OilType(IntEnum):
+    VEGETABLE_OIL = 0
+    NON_VEGETABLE_OIL = 1
+
+OilsHardnessCoefficient = [8.8, 6.1, 2.0, 4.2, 5]
+ProductHardnessCoefficientLB = 3
+ProductHardnessCoefficientUB = 6
 
 # [i][j] where i=Oil Type, j=Month index
 def Create2DArray(n1, n2):
@@ -51,26 +62,6 @@ for i in range(nOils):
 for j in range(nMonths):
     PV[j] = h.addVariable()
 
-#       Constraints
-# Inventory
-InventoryEqs = Create2DArray(nOils, nMonths)
-for i in range(nOils):
-    for j in range(nMonths):
-        dS = SV[i][j]
-        if j==0:
-            dS -= InitialStorage
-        else:
-            dS -= SV[i][j-1]
-        InventoryEqs[i][j] = h.addConstr(BV[i][j] - UV[i][j] == dS)
-
-# Mass Balance:
-MassBalamceEqs = Create1DArray(nMonths)
-for j in range(nMonths):
-    UsedOil = 0
-    for i in range(nOils):
-        UsedOil += UV[i][j]
-    MassBalamceEqs[j] = h.addConstr(UsedOil == PV[j])
-
 
 #       Objective
 Income = 0
@@ -92,6 +83,43 @@ Cost = OilPurchaseCost + OilStorageCost
 
 Profit = Income - Cost
 
+
+#       Constraints
+# Inventory
+InventoryEqs = Create2DArray(nOils, nMonths)
+for i in range(nOils):
+    for j in range(nMonths):
+        dS = SV[i][j]
+        if j==0:
+            dS -= InitialStorage
+        else:
+            dS -= SV[i][j-1]
+        InventoryEqs[i][j] = h.addConstr(BV[i][j] - UV[i][j] == dS)
+
+# Mass Balance:
+MassBalamceEqs = Create1DArray(nMonths)
+for j in range(nMonths):
+    UsedOil = 0
+    for i in range(nOils):
+        UsedOil += UV[i][j]
+    MassBalamceEqs[j] = h.addConstr(UsedOil == PV[j])
+
+# Refining Limits:
+RefiningConstraints = Create2DArray(2, nMonths)
+for j in range(nMonths):
+    RefiningConstraints[OilType.VEGETABLE_OIL][j] = h.addConstr(UV[0][j]+UV[1][j]<=VegetableOilMonthlyRefiningLimit)
+    RefiningConstraints[OilType.NON_VEGETABLE_OIL][j] = h.addConstr(UV[2][j]+UV[3][j]+UV[4][j]<=NonVegetableOilMonthlyRefiningLimit)
+
+# Hardness:
+HardnessConstraints = Create1DArray(nMonths)
+for j in range(nMonths):
+    ProductHardness = 0
+    for i in range(nOils):
+        ProductHardness += OilsHardnessCoefficient[i] * UV[i][j]
+    HardnessConstraints[j] = h.addConstr(ProductHardnessCoefficientLB*PV[j] <= ProductHardness <= ProductHardnessCoefficientUB*PV[j])
+
+
+#       Optimize
 h.maximize(Profit)
 
 print("end")
