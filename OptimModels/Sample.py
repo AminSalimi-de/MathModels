@@ -13,6 +13,9 @@ h.minimize(x0 + x1)
 
 h.run()
 
+#       Extract Results
+# https://github.com/ERGO-Code/HiGHS/blob/master/examples/call_highs_from_python.py
+
 solution = h.getSolution()
 basis = h.getBasis()
 info = h.getInfo()

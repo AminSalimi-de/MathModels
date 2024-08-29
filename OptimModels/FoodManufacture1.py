@@ -12,8 +12,8 @@ JuneStorage = 500 #[ton]
 StorageUB = 1000 #[ton]
 MonthlyStorageCost = 5 #[pond/(ton.month)]
 ProductPrice = 150 # 150 [pond/ton]
-VegetableOilMonthlyRefiningLimit = 200
-NonVegetableOilMonthlyRefiningLimit = 250
+VegetableOilMonthlyRefiningLimit = 200 #[ton]
+NonVegetableOilMonthlyRefiningLimit = 250 #[ton]
 
 class OilType(IntEnum):
     VEGETABLE_OIL = 0
@@ -24,6 +24,7 @@ ProductHardnessCoefficientLB = 3
 ProductHardnessCoefficientUB = 6
 
 # [i][j] where i=Oil Type, j=Month index
+
 def Create2DArray(n1, n2):
     return [[None for x2 in range(n2)] for x1 in range(n1)]
 
@@ -38,6 +39,12 @@ def GetOilPrices():
     Oil4Prices = [115, 115, 95, 125, 105, 135]
     return [Oil0Prices, Oil1Prices, Oil2Prices, Oil3Prices, Oil4Prices]
 
+def Get1DName(name, index):
+    return f"{name}[{index}]"
+
+def Get2DName(name, index1, index2):
+    return f"{name}[{index1}][{index2}]"
+
 #       Decision Variables
 BV = Create2DArray(nOils, nMonths) # Buy Oils Variables 
 UV = Create2DArray(nOils, nMonths) # Use Oils Variables
@@ -46,21 +53,21 @@ PV = Create1DArray(nMonths) # Product Variables
 
 for i in range(nOils):
     for j in range(nMonths):
-        BV[i][j] = h.addVariable()
+        BV[i][j] = h.addVariable(name=Get2DName("BV", i, j))
 
 for i in range(nOils):
     for j in range(nMonths):
-        UV[i][j] = h.addVariable()
+        UV[i][j] = h.addVariable(name=Get2DName("UV", i, j))
 
 for i in range(nOils):
     for j in range(nMonths):
         if j != nMonths-1:
-            SV[i][j] = h.addVariable(ub=StorageUB)
+            SV[i][j] = h.addVariable(ub=StorageUB, name=Get2DName("SV", i, j))
         else:
             SV[i][j] = JuneStorage
 
 for j in range(nMonths):
-    PV[j] = h.addVariable()
+    PV[j] = h.addVariable(name=Get1DName("PV", j))
 
 
 #       Objective
@@ -122,4 +129,10 @@ for j in range(nMonths):
 #       Optimize
 h.maximize(Profit)
 
-print("end")
+#       Extract Results
+h.writeSolution("C:\\Users\\AminSalimi\\Documents\\FM1.txt", 0)
+
+solution = h.getSolution()
+num_var = h.getNumCol()
+for icol in range(num_var):
+    print(icol, h.getColName(icol), solution.col_value[icol])
