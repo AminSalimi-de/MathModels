@@ -15,7 +15,7 @@ model.constraint1 = Constraint(expr=model.x + 2*model.y <= 20)
 model.constraint2 = Constraint(expr=3*model.x + 4*model.y >= 18)
 
 # Write the model to an LP file
-model.write('C:\\Users\\AminSalimi\\source\\repos\\MathModels\\OptimModels\\model.lp', format='lp', io_options={'symbolic_solver_labels': True})
+model.write('C:/Users/AminSalimi/Documents/model.lp', format='lp', io_options={'symbolic_solver_labels': True})
 
 # Solve the model using the default solver (e.g., GLPK, if installed)
 solver = SolverFactory('highs')

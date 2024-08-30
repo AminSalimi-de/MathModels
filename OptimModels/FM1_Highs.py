@@ -45,6 +45,7 @@ def Get1DName(name, index):
 def Get2DName(name, index1, index2):
     return f"{name}[{index1}][{index2}]"
 
+
 #       Decision Variables
 BV = Create2DArray(nOils, nMonths) # Buy Oils Variables 
 UV = Create2DArray(nOils, nMonths) # Use Oils Variables
@@ -84,7 +85,7 @@ for i in range(nOils):
 OilStorageCost = 0
 for i in range(nOils):
     for j in range(nMonths):
-        OilPurchaseCost += MonthlyStorageCost * SV[i][j]
+        OilStorageCost += MonthlyStorageCost * SV[i][j]
 
 Cost = OilPurchaseCost + OilStorageCost
 
@@ -104,12 +105,12 @@ for i in range(nOils):
         InventoryEqs[i][j] = h.addConstr(BV[i][j] - UV[i][j] == dS)
 
 # Mass Balance:
-MassBalamceEqs = Create1DArray(nMonths)
+MassBalanceEqs = Create1DArray(nMonths)
 for j in range(nMonths):
     UsedOil = 0
     for i in range(nOils):
         UsedOil += UV[i][j]
-    MassBalamceEqs[j] = h.addConstr(UsedOil == PV[j])
+    MassBalanceEqs[j] = h.addConstr(UsedOil == PV[j])
 
 # Refining Limits:
 RefiningConstraints = Create2DArray(2, nMonths)
