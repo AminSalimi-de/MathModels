@@ -17,9 +17,9 @@ ProductPrice = 150 # 150 [pond/ton]
 VegetableOilMonthlyRefiningLimit = 200 #[ton]
 NonVegetableOilMonthlyRefiningLimit = 250 #[ton]
 
-class OilType(IntEnum):
-    VEGETABLE_OIL = 0
-    NON_VEGETABLE_OIL = 1
+class OilCategory(IntEnum):
+    VEGETABLE_OIL = 1
+    NON_VEGETABLE_OIL = 2
 
 OilsHardnessCoefficient = [8.8, 6.1, 2.0, 4.2, 5]
 def GetHardnessCoeff(i):
@@ -29,7 +29,7 @@ ProductHardnessCoefficientUB = 6
 
 model.I = pyo.RangeSet(1, nOils)
 model.J = pyo.RangeSet(1, nMonths)
-model.OilTypes = pyo.RangeSet(1, 2)
+model.OilCategory = pyo.RangeSet(1, 2)
 
 Oil1Prices = [110, 130, 110, 120, 100, 90]
 Oil2Prices = [120, 130, 140, 110, 120, 100]
@@ -52,14 +52,16 @@ model.PV = pyo.Var(model.J, domain=pyo.NonNegativeReals)
 #       Objective
 def GetObjectiveExpression(m):    
     Income = sum(ProductPrice*m.PV[j] for j in m.J)
+    OilPurchaseCost = 0
+    OilStorageCost = 0
     for i in m.I:
-        OilPurchaseCost = sum(m.OilPrices[i,j] * m.BV[i,j] for j in m.J)
-    for i in m.I:
-        OilStorageCost = sum(MonthlyStorageCost * m.SV[i, j] for j in m.J)
+        OilPurchaseCost += sum(m.OilPrices[i,j] * m.BV[i,j] for j in m.J)
+        OilStorageCost += sum(MonthlyStorageCost * m.SV[i, j] for j in m.J)
     Cost = OilPurchaseCost + OilStorageCost
     Profit = Income - Cost
     return Profit    
 model.OBJ = pyo.Objective(rule=GetObjectiveExpression, sense=pyo.maximize)
+
 
 #       Constraints
 # Inventory
@@ -84,11 +86,11 @@ model.FinalStorageEqs = pyo.Constraint(model.I, rule=GetFinalStorageEq)
 
 # Refining Limits:
 def GetRefiningConstraint(m, type, j):
-    if type==OilType.VEGETABLE_OIL:
+    if type==OilCategory.VEGETABLE_OIL:
         return m.UV[1,j]+m.UV[2,j]<=VegetableOilMonthlyRefiningLimit
     else:
         return m.UV[3,j]+m.UV[4,j]+m.UV[5,j]<=NonVegetableOilMonthlyRefiningLimit
-model.RefiningConstraints = pyo.Constraint(model.OilTypes, model.J, rule=GetRefiningConstraint)
+model.RefiningConstraints = pyo.Constraint(model.OilCategory, model.J, rule=GetRefiningConstraint)
 
 # Hardness:
 def GetHardness(m, j):
@@ -103,7 +105,7 @@ model.HardnessLBConstraints = pyo.Constraint(model.J, rule=GetHardnessLBConstrai
 solver = SolverFactory('highs')
 solver.solve(model)
 
-model.write('C:/Users/AminSalimi/Documents/FM1.lp', format='lp')
+model.write('C:/Users/AminSalimi/Documents/FM1.lp', format='lp', io_options={"symbolic_solver_labels": True})
 
 print("Objective value:", model.OBJ())
 for v in model.component_objects(Var, active=True):
