@@ -102,11 +102,17 @@ def GetHardnessLBConstraint(m, j):
 model.HardnessUBConstraints = pyo.Constraint(model.J, rule=GetHardnessUBConstraint)
 model.HardnessLBConstraints = pyo.Constraint(model.J, rule=GetHardnessLBConstraint)
 
+
+#       Solve
 solver = SolverFactory('highs')
 solver.solve(model)
 
+
+#       Write Model
 model.write('C:/Users/AminSalimi/Documents/FM1.lp', format='lp', io_options={"symbolic_solver_labels": True})
 
+
+#       Print Results
 print("Objective value:", model.OBJ())
 for v in model.component_objects(Var, active=True):
     varobject = getattr(model, str(v))
