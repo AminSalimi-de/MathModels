@@ -118,3 +118,43 @@ for v in model.component_objects(Var, active=True):
     varobject = getattr(model, str(v))
     for index in varobject:
         print(f"{varobject[index].name} = {varobject[index].value}")
+
+
+
+#       Food Manufacture 2
+# Binary Variables:
+model.DUV = pyo.Var(model.I, model.J, domain=pyo.Binary)
+
+# Indicator Constraints:
+def GetIndicatorConstraintUB(m, i, j):
+    IndicatorUB = 0
+    if (i>2):
+        IndicatorUB = VegetableOilMonthlyRefiningLimit
+    else:
+        IndicatorUB = NonVegetableOilMonthlyRefiningLimit
+    return m.UV[i,j] - IndicatorUB*m.DUV[i,j] <= 0
+model.IndicatorUBConstraint = pyo.Constraint(model.I, model.J, rule=GetIndicatorConstraintUB)
+
+def GetIndicatorConstraintLB(m, i, j):
+    IndicatorLB = 20 #[ton]
+    return m.UV[i,j] - IndicatorLB*m.DUV[i,j] >= 0
+model.IndicatorLBConstraint = pyo.Constraint(model.I, model.J, rule=GetIndicatorConstraintLB)
+
+# Number of Oils Constraints:
+def GetNumberOfOilsConstraint(m, j):
+    return sum(m.DUV[i,j] for i in m.I) <= 3
+model.NumberOfOilsConstraints = pyo.Constraint(model.J, rule=GetNumberOfOilsConstraint)
+
+# Blending Consrtaints:
+def GetBlendingConstraint(m, j):
+    return m.DUV[1,j] + m.DUV[2,j] - 2*m.DUV[5,j] <= 0
+model.BlendingConstraints = pyo.Constraint(model.J, rule=GetBlendingConstraint)
+
+
+solver.solve(model)
+
+print("Objective value:", model.OBJ())
+for v in model.component_objects(Var, active=True):
+    varobject = getattr(model, str(v))
+    for index in varobject:
+        print(f"{varobject[index].name} = {varobject[index].value}")
