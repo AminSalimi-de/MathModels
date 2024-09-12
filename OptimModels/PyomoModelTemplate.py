@@ -1,15 +1,14 @@
 import pyomo.environ as pyo
 from pyomo.environ import *
 
-#       Parameters:
-
-
-#       Variables:
-
-
-#       Objective:
-
-
-#       Constraints
-
-
+def BuildModel():
+    model = pyo.ConcreteModel()
+    #       Parameters:
+    
+    #       Variables:
+    
+    #       Objective:
+    
+    #       Constraints
+    
+    return model
