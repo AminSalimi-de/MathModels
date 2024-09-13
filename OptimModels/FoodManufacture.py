@@ -1,7 +1,7 @@
 import pyomo.environ as pyo
 from pyomo.environ import *
 from enum import IntEnum
-    
+import Helper    
 
 #       Food Manufacture 1
 #       Parameters
@@ -105,25 +105,11 @@ def BuildFoodManufacture1Model():
     model.HardnessLBConstraints = pyo.Constraint(model.J, rule=GetHardnessLBConstraint)
     return model
 
-def SolveModel(m):
-    solver = SolverFactory('highs')
-    solver.solve(m)
-
-def PrintModelResults(m):
-    print("Objective value:", m.OBJ())
-    for v in m.component_objects(Var, active=True):
-        varobject = getattr(m, str(v))
-        for index in varobject:
-            print(f"{varobject[index].name} = {varobject[index].value}")
-            
-def WriteLP(m, name):
-    m.write(f'C:/Users/AminSalimi/Documents/{name}.lp', format='lp', io_options={"symbolic_solver_labels": True})
-    
     
 FM1_model = BuildFoodManufacture1Model()
-WriteLP(FM1_model, "FM1")
-SolveModel(FM1_model)
-PrintModelResults(FM1_model)
+Helper.WriteLP(FM1_model, "FM1")
+Helper.SolveModel(FM1_model)
+Helper.PrintModelResults(FM1_model)
 
 
 #       Food Manufacture 2
@@ -166,6 +152,6 @@ def BuildFoodManufacture2Model():
 
 
 FM2_model = BuildFoodManufacture2Model()
-WriteLP(FM2_model, "FM2")
-SolveModel(FM2_model)
-PrintModelResults(FM2_model)
+Helper.WriteLP(FM2_model, "FM2")
+Helper.SolveModel(FM2_model)
+Helper.PrintModelResults(FM2_model)

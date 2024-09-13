@@ -1,6 +1,7 @@
 import pyomo.environ as pyo
 from pyomo.environ import *
 from enum import IntEnum
+import Helper
 
 #       Parameters:
 nGen1 = 12
@@ -79,6 +80,12 @@ def GetUpReserveEq(m, j):
     ExtraGenerationCapacity = sum(m.UP[i,j]*(GetPmax(i)-m.P[i,j]) for i in m.I)
     return ExtraGenerationCapacity >= 0.15*GetLoad(j)
 
+def GetUP_SU_Relation(m, i, j):
+    if j==1:
+        return m.UP[i,j] <= m.SU[i,j]    
+    else:
+        return m.UP[i,j]-m.UP[i,j-1] <= m.SU[i,j]
+
 def BuildPowerGenerationModel():
     model = pyo.ConcreteModel()
     #       Parameters:
@@ -93,8 +100,11 @@ def BuildPowerGenerationModel():
     #       Constraints
     model.PB = pyo.Constraint(model.J, rule=GetPowerBalanceEq)
     model.UP_RES = pyo.Constraint(model.J, rule=GetUpReserveEq)
+    model.StartUp = pyo.Constraint(model.I, model.J, rule=GetUP_SU_Relation)
     return model
 
 PowerGenerationModel = BuildPowerGenerationModel()
 
-print("end")
+Helper.WriteLP(PowerGenerationModel, "PowerGeneration")
+Helper.SolveModel(PowerGenerationModel)
+Helper.PrintModelResults(PowerGenerationModel)
