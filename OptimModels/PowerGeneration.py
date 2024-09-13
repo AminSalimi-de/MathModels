@@ -56,7 +56,13 @@ def GetPowerBounds(m, i, j):
 def GetPmin(i):
     return GetPowerBounds(None,i,None)[0]
 
-#       Objective:
+def GetPmax(i):
+    return GetPowerBounds(None,i,None)[1]
+
+Load = [15000, 30000, 25000, 40000, 27000]
+def GetLoad(j): #[MW]    
+    return Load[j-1]
+
 def GetObjectiveExpression(m):
     StartUpCost = 0; MinimumGenerationCost = 0; VOMCost = 0
     for i in m.I:
@@ -64,7 +70,15 @@ def GetObjectiveExpression(m):
         MinimumGenerationCost += sum(GetMinGenCost(i)*GetPeriodDuration(j)*m.UP[i,j] for j in m.J)
         VOMCost += sum(GetVOMCost(i)*GetPeriodDuration(j)*m.UP[i,j]*(m.P[i,j]-GetPmin(i)) for j in m.J)        
     return StartUpCost + MinimumGenerationCost + VOMCost
-    
+
+def GetPowerBalanceEq(m, j):
+    Generation = sum(m.UP[i,j]*m.P[i,j] for i in m.I)
+    return Generation == GetLoad(j)
+
+def GetUpReserveEq(m, j):
+    ExtraGenerationCapacity = sum(m.UP[i,j]*(GetPmax(i)-m.P[i,j]) for i in m.I)
+    return ExtraGenerationCapacity >= 0.15*GetLoad(j)
+
 def BuildPowerGenerationModel():
     model = pyo.ConcreteModel()
     #       Parameters:
@@ -77,7 +91,8 @@ def BuildPowerGenerationModel():
     #       Objective:
     model.OBJ = pyo.Objective(rule=GetObjectiveExpression, sense=pyo.minimize)
     #       Constraints
-    
+    model.PB = pyo.Constraint(model.J, rule=GetPowerBalanceEq)
+    model.UP_RES = pyo.Constraint(model.J, rule=GetUpReserveEq)
     return model
 
 PowerGenerationModel = BuildPowerGenerationModel()
