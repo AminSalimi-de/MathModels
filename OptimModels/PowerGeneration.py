@@ -69,7 +69,7 @@ def GetObjectiveExpression(m):
     for i in m.I:
         StartUpCost += sum(GetStartUpCost(i)*m.SU[i,j] for j in m.J)
         MinimumGenerationCost += sum(GetMinGenCost(i)*GetPeriodDuration(j)*m.UP[i,j] for j in m.J)
-        VOMCost += sum(GetVOMCost(i)*GetPeriodDuration(j)*m.UP[i,j]*(m.P[i,j]-GetPmin(i)) for j in m.J)        
+        VOMCost += sum(GetVOMCost(i)*GetPeriodDuration(j)*(m.P[i,j]-GetPmin(i)) for j in m.J)        
     return StartUpCost + MinimumGenerationCost + VOMCost
 
 def GetPowerBalanceEq(m, j):
@@ -82,7 +82,7 @@ def GetUpReserveEq(m, j):
 
 def GetUP_SU_Relation(m, i, j):
     if j==1:
-        return m.UP[i,j] <= m.SU[i,j]    
+        return m.UP[i,j]-m.UP[i,nPeriod] <= m.SU[i,j]    
     else:
         return m.UP[i,j]-m.UP[i,j-1] <= m.SU[i,j]
 
