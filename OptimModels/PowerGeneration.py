@@ -101,6 +101,8 @@ def BuildPowerGenerationModel():
     model.PB = pyo.Constraint(model.J, rule=GetPowerBalanceEq)
     model.UP_RES = pyo.Constraint(model.J, rule=GetUpReserveEq)
     model.StartUp = pyo.Constraint(model.I, model.J, rule=GetUP_SU_Relation)
+    #       Shadow Prices
+    model.dual = Suffix(direction=Suffix.IMPORT)    
     return model
 
 PowerGenerationModel = BuildPowerGenerationModel()
@@ -108,3 +110,10 @@ PowerGenerationModel = BuildPowerGenerationModel()
 Helper.WriteLP(PowerGenerationModel, "PowerGeneration")
 Helper.SolveModel(PowerGenerationModel)
 Helper.PrintModelResults(PowerGenerationModel)
+
+Helper.fix_binary_variables(PowerGenerationModel)
+Helper.SolveModel(PowerGenerationModel)
+
+print("Electricity Prices:")
+for index in PowerGenerationModel.PB:
+    print(f"{PowerGenerationModel.dual[PowerGenerationModel.PB[index]] / GetPeriodDuration(index)}")

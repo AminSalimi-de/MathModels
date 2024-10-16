@@ -5,6 +5,12 @@ def SolveModel(m):
     solver = SolverFactory('highs')
     solver.solve(m)
 
+def fix_binary_variables(model):
+    for v in model.component_objects(Var, active=True):
+        for index in v:
+            if v[index].domain is Binary:
+                v[index].fix(round(v[index].value))
+
 def PrintModelResults(m):
     print("Objective value:", m.OBJ())
     for v in m.component_objects(Var, active=True):
