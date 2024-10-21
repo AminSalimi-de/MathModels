@@ -69,15 +69,21 @@ def GetObjectiveExpression(m):
     for i in m.I:
         StartUpCost += sum(GetStartUpCost(i)*m.SU[i,j] for j in m.J)
         MinimumGenerationCost += sum(GetMinGenCost(i)*GetPeriodDuration(j)*m.UP[i,j] for j in m.J)
-        VOMCost += sum(GetVOMCost(i)*GetPeriodDuration(j)*(m.P[i,j]-GetPmin(i)) for j in m.J)        
+        VOMCost += sum(GetVOMCost(i)*GetPeriodDuration(j)*(m.P[i,j]-GetPmin(i)*m.UP[i,j]) for j in m.J)        
     return StartUpCost + MinimumGenerationCost + VOMCost
 
+def GetP_LB(m,i,j):
+    return m.P[i,j] >= GetPmin(i) * m.UP[i,j]
+
+def GetP_UB(m,i,j):
+    return m.P[i,j] <= GetPmax(i) * m.UP[i,j]
+
 def GetPowerBalanceEq(m, j):
-    Generation = sum(m.UP[i,j]*m.P[i,j] for i in m.I)
+    Generation = sum(m.P[i,j] for i in m.I)
     return Generation == GetLoad(j)
 
 def GetUpReserveEq(m, j):
-    ExtraGenerationCapacity = sum(m.UP[i,j]*(GetPmax(i)-m.P[i,j]) for i in m.I)
+    ExtraGenerationCapacity = sum(m.UP[i,j]*GetPmax(i)-m.P[i,j] for i in m.I)
     return ExtraGenerationCapacity >= 0.15*GetLoad(j)
 
 def GetUP_SU_Relation(m, i, j):
@@ -92,12 +98,14 @@ def BuildPowerGenerationModel():
     model.I = pyo.RangeSet(nGen1+nGen2+nGen3)
     model.J = pyo.RangeSet(nPeriod)
     #       Variables:
-    model.P = pyo.Var(model.I, model.J, bounds=GetPowerBounds)
+    model.P = pyo.Var(model.I, model.J, domain=pyo.NonNegativeReals)
     model.UP = pyo.Var(model.I, model.J, domain=pyo.Binary)
     model.SU = pyo.Var(model.I, model.J, domain=pyo.Binary)
     #       Objective:
     model.OBJ = pyo.Objective(rule=GetObjectiveExpression, sense=pyo.minimize)
     #       Constraints
+    model.P_LB = pyo.Constraint(model.I, model.J, rule=GetP_LB)
+    model.P_UB = pyo.Constraint(model.I, model.J, rule=GetP_UB)
     model.PB = pyo.Constraint(model.J, rule=GetPowerBalanceEq)
     model.UP_RES = pyo.Constraint(model.J, rule=GetUpReserveEq)
     model.StartUp = pyo.Constraint(model.I, model.J, rule=GetUP_SU_Relation)
