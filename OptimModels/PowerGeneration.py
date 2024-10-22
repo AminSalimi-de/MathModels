@@ -46,7 +46,7 @@ def GetVOMCost(i): #[cost/hr/MW]
     else:        
         return 3
 
-def GetPowerBounds(m, i, j):
+def GetPowerBounds(i):
     if i < GeneratorType.GEN2:
         return (Pmin1, Pmax1)
     elif i < GeneratorType.GEN3:
@@ -55,10 +55,10 @@ def GetPowerBounds(m, i, j):
         return (Pmin3, Pmax3)
 
 def GetPmin(i):
-    return GetPowerBounds(None,i,None)[0]
+    return GetPowerBounds(i)[0]
 
 def GetPmax(i):
-    return GetPowerBounds(None,i,None)[1]
+    return GetPowerBounds(i)[1]
 
 Load = [15000, 30000, 25000, 40000, 27000]
 def GetLoad(j): #[MW]    
